@@ -189,6 +189,7 @@ public class FirebasePlugin extends CordovaPlugin {
     private Map<String, ListenerRegistration> firestoreListeners = new HashMap<String, ListenerRegistration>();
 
     private MultiFactorResolver multiFactorResolver = null;
+    private static int initTimeout = 2000;     
 
     @Override
     protected void pluginInitialize() {
@@ -4050,22 +4051,23 @@ public class FirebasePlugin extends CordovaPlugin {
                                 return;
                             }
                             instance.currentIdToken = idToken;
-                            String providerId = result.getSignInProvider();
-                            FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange({\"idToken\":\"" + idToken + "\",\"providerId\":\"" + providerId + "\"})");
+                            String providerId = result.getSignInProvider();                            
+                            setTimeout(() -> FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange({\"idToken\":\"" + idToken + "\",\"providerId\":\"" + providerId + "\"})"), FirebasePlugin.initTimeout);                            
                         } catch (Exception e) {
-                            FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                            setTimeout(() -> FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()"), FirebasePlugin.initTimeout);                          
                         }
                     }
 
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                        setTimeout(() -> FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()"), FirebasePlugin.initTimeout);
                     }
                 });
             } catch (Exception e) {
-                FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                setTimeout(() -> FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()"), FirebasePlugin.initTimeout);
             }
+            FirebasePlugin.initTimeout = 0;
         }
     }
 
@@ -4219,5 +4221,17 @@ public class FirebasePlugin extends CordovaPlugin {
             callbackContext.error("No user is currently signed");
         }
         return signedIn;
+    }
+
+    private static void setTimeout(Runnable runnable, int delay){
+         new Thread(() -> {
+             try {
+                Thread.sleep(delay);
+                runnable.run();
+             }
+             catch (Exception e){
+                System.err.println(e);
+             }
+         }).start();
     }
 }
