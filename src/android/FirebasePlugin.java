@@ -171,6 +171,11 @@ public class FirebasePlugin extends CordovaPlugin {
     protected static final String POST_NOTIFICATIONS = "POST_NOTIFICATIONS";
     protected static final int POST_NOTIFICATIONS_PERMISSION_REQUEST_ID = 1;
 
+
+    protected static final String INIT_TIMEOUT = "init_timeout";
+    private static int initTimeout = 2000;   
+
+
     private static boolean inBackground = true;
     private static ArrayList<Bundle> notificationStack = null;
     private static CallbackContext notificationCallbackContext;
@@ -189,7 +194,8 @@ public class FirebasePlugin extends CordovaPlugin {
     private Map<String, ListenerRegistration> firestoreListeners = new HashMap<String, ListenerRegistration>();
 
     private MultiFactorResolver multiFactorResolver = null;
-    private static int initTimeout = 2000;     
+
+ 
 
     @Override
     protected void pluginInitialize() {
@@ -234,6 +240,11 @@ public class FirebasePlugin extends CordovaPlugin {
 
                     if (getMetaDataFromManifest(GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS)) {
                         setPreference(GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS, true);
+                    }
+
+                    to = getMetaDataFromManifest(INIT_TIMEOUT);
+                    if (to) {
+                        FirebasePlugin.initTimeout = to;
                     }
 
                     FirebaseApp.initializeApp(applicationContext);
@@ -3811,6 +3822,13 @@ public class FirebasePlugin extends CordovaPlugin {
         SharedPreferences settings = cordovaActivity.getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = settings.edit();
         editor.putBoolean(name, value);
+        editor.apply();
+    }
+
+    private void setPreferenceInt(String name, int value) {
+        SharedPreferences settings = cordovaActivity.getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putInt(name, value);
         editor.apply();
     }
 
